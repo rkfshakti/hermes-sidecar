@@ -7,7 +7,7 @@
 | Plugin | **Sidecar** — remote brain, local hands |
 | Repo | https://github.com/rkfshakti/hermes-sidecar |
 | Catalog PR | https://github.com/NousResearch/hermes-agent/pull/153541 |
-| Pinned SHA | `2a14649b57c6f267fbdcb859ac35957a61e0ee0f` |
+| Pinned SHA | `c45e162757c53bbebeda55d6dc18da844e56ee2f` |
 | Demo video | `video/sidecar-demo.mp4` (82.0 s, 1200×900, narrated) |
 | Silent cut | `video/sidecar-demo-silent.mp4` (same footage, no voiceover) |
 | Thumbnail | `video/slides/01-title.png` |
@@ -116,7 +116,7 @@ and X (for the demo).
 ## 4. Sanity check
 
 - [x] Catalog PR open: https://github.com/NousResearch/hermes-agent/pull/153541
-- [x] One catalog file, pinned SHA `2a14649b57c6f267fbdcb859ac35957a61e0ee0f`
+- [x] One catalog file, pinned SHA `c45e162757c53bbebeda55d6dc18da844e56ee2f`
 - [x] `requires_hermes` matches in `plugin.yaml` and the catalog entry (`>=0.22.3`)
 - [x] `hermes plugins validate . --install-deps` passes at the pinned SHA
 - [x] `hermes plugins doctor . --ci` passes
