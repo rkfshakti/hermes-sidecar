@@ -1,0 +1,47 @@
+name: sidecar
+version: 1.0.0
+manifest_version: 2
+api_version: 1
+kind: backend
+description: >-
+  Remote brain, local hands. A paired local execution sidecar for a remote Hermes:
+  terminal and file-tool commands run on the user's own machine behind a local
+  approval prompt, a deny list and an append-only audit log. The agent keeps its
+  cloud skills, memory and provider configuration; the workspace, tools and
+  credentials stay local.
+author: rkfshakti
+license: MIT
+homepage: https://github.com/rkfshakti/hermes-sidecar
+tags: [remote, terminal, backend, bridge, local, approval, audit]
+requires_hermes: ">=0.22.3"
+provides_tools:
+  - sidecar_status
+  - sidecar_audit
+provides_hooks: []
+config_schema:
+  url:
+    type: str
+    default: "http://127.0.0.1:8765"
+    label: Sidecar daemon URL
+    description: >-
+      The URL of the local Sidecar daemon. Keep it on loopback, or reach it through
+      Tailscale/SSH. Never expose the daemon to the public internet.
+  token:
+    type: secret
+    env: SIDECAR_TOKEN
+    label: Pairing token
+    description: >-
+      The bearer token printed by `hermes sidecar pair` on the local machine. It is
+      stored in the profile's .env as SIDECAR_TOKEN when set through the Desktop form.
+  workspace:
+    type: str
+    default: "~"
+    label: Local workspace
+    description: >-
+      The directory on the local machine where commands start and which the agent may
+      use. Paths outside it require the local daemon's explicit opt-in.
+  timeout:
+    type: int
+    default: 300
+    label: Command timeout (seconds)
+    description: Default timeout for a local command; the daemon clamps it to its own maximum.
