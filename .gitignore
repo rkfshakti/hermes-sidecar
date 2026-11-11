@@ -6,6 +6,5 @@ __pycache__/
 *.egg-info/
 video/build/
 video/contact.png
-video/demo-frame.png
 demo/frame.png
 demo/*.cast

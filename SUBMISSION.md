@@ -43,6 +43,12 @@ Pre-filled X compose link (text only; attach the video in the composer):
 https://x.com/intent/post?text=Sidecar%20gives%20%40NousResearch%20Hermes%20a%20split%20runtime%3A%20the%20agent%20keeps%20its%20cloud%20skills%20and%20memory%2C%20while%20terminal%20and%20file%20tools%20run%20on%20your%20laptop%20through%20a%20paired%20daemon%2C%20a%20local%20approval%20prompt%2C%20and%20an%20audit%20log.%20Remote%20brain%2C%20local%20hands.%20%23HermesAgent
 ```
 
+**Image description for `video/demo-frame.png`** — 793 characters, under X's
+1,000-character image-description limit (copy from
+`video/narration.txt` (the image description)):
+
+> Split-terminal screenshot of the Sidecar demo. Left pane, labeled "REMOTE HERMES · brain on the VPS," shows a remote agent session. It prints `$ pwd` and receives `/Users/shakti/oss-contributions/repos/sidecar`; `$ ls -1 | head -6` lists the local project files; `$ cat README.md | head -4` shows the Sidecar README. Each command reports exit 0, decision allow or ask, and a duration. Right pane, labeled "LOCAL SIDECAR · this Mac," shows the local approval prompt. Two boxed requests—`ls -1 | head -6` and `cat README.md | head -4`—show the timestamp, client, working directory and exact command, followed by `Approve? [y/N] y`. A dark status bar reads "SIDECAR · remote brain · local hands." The image shows that the remote agent receives output while every command waits for local approval.
+
 **Demo storyboard (already in the video):**
 
 - Title: Sidecar — remote brain, local hands.
@@ -54,7 +60,7 @@ https://x.com/intent/post?text=Sidecar%20gives%20%40NousResearch%20Hermes%20a%20
 - Verify: eight checks, 44 tests, zero dependencies.
 - CTA: repo + install + verify.
 
-**Voiceover script** (the video uses a synthetic Samantha voice; re-record if you prefer):
+**Voiceover script** (`video/narration-video.txt`; the video uses a synthetic Samantha voice; re-record if you prefer):
 
 > Hermes is at its best when it lives on a server with your skills and your
 > memory. But the work is on your laptop: the files, the local services, the
