@@ -1,6 +1,6 @@
 # Sidecar — Hermes Agent Plugin Hackathon submission
 
-**Status: catalog PR is open. Two manual steps remain: post the demo on X, then submit the form.**
+**Status: submitted. Catalog PR open, X demo published, Typeform submitted. Waiting on the maintainer workflow-approval gate.**
 
 | Item | Value |
 |---|---|
@@ -137,7 +137,7 @@ and X (for the demo).
 - [x] Plugin repo tests workflow green at the pinned SHA
 - [x] Demo video is 82.0 s (< 90 s), shows the plugin working
 - [x] X post published and tagged `@NousResearch` — https://x.com/onemohapatra/status/2120535026844774911
-- [ ] Typeform submitted with both links
+- [x] Typeform submitted with both links (11 Nov 2026)
 - [ ] Maintainer approved the `action_required` workflow runs
 
 ---
