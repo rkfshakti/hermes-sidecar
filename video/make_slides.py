@@ -135,7 +135,7 @@ SLIDES = {
       ✓ exit code preserved &nbsp; ✓ deny list blocks GUI automation<br>
       ✓ workspace escape blocked &nbsp; ✓ timeout enforced &nbsp; ✓ audit recorded</span></div>
       <div class="checks">
-        <div class="check"><span class="tick">✓</span> 42 tests, zero Python dependencies</div>
+        <div class="check"><span class="tick">✓</span> 44 tests, zero Python dependencies</div>
         <div class="check"><span class="tick">✓</span> 8-check self-test, local ephemeral daemon</div>
         <div class="check"><span class="tick">✓</span> terminal, file, patch, search, execute_code</div>
         <div class="check"><span class="tick">✓</span> catalog PR pinned by SHA</div>
