@@ -7,7 +7,7 @@
 | Plugin | **Sidecar** — remote brain, local hands |
 | Repo | https://github.com/rkfshakti/hermes-sidecar |
 | Catalog PR | https://github.com/NousResearch/hermes-agent/pull/153541 |
-| Pinned SHA | `c45e162757c53bbebeda55d6dc18da844e56ee2f` |
+| Pinned SHA | pinned in `plugin-catalog/sidecar.yaml` on the catalog PR |
 | Demo video | `video/sidecar-demo.mp4` (82.0 s, 1200×900, narrated) |
 | Silent cut | `video/sidecar-demo-silent.mp4` (same footage, no voiceover) |
 | Thumbnail | `video/slides/01-title.png` |
@@ -103,7 +103,7 @@ and X (for the demo).
   the workflow run. A polite comment is already on the PR. If you are in the
   Nous Research Discord, mention the PR and ask for an approval.
 - **Catalog review:** the entry is one file (`plugin-catalog/sidecar.yaml`) and
-  pins the exact SHA above. The plugin repo's `tests` workflow is green at that
+  pins the submitted commit. The plugin repo's `tests` workflow is green at that
   SHA.
 - **PR slot cap:** this repository allows 5 concurrent open PRs for accounts
   without write access. To open #153541, **#67426** was closed temporarily
@@ -116,7 +116,7 @@ and X (for the demo).
 ## 4. Sanity check
 
 - [x] Catalog PR open: https://github.com/NousResearch/hermes-agent/pull/153541
-- [x] One catalog file, pinned SHA `c45e162757c53bbebeda55d6dc18da844e56ee2f`
+- [x] One catalog file, pinned to the submitted commit
 - [x] `requires_hermes` matches in `plugin.yaml` and the catalog entry (`>=0.22.3`)
 - [x] `hermes plugins validate . --install-deps` passes at the pinned SHA
 - [x] `hermes plugins doctor . --ci` passes

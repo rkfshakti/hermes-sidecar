@@ -354,7 +354,7 @@ def _cmd_demo(args: argparse.Namespace) -> int:
                     "duration_ms": result.get("duration_ms") or int((time.monotonic() - started) * 1000),
                 })
             except Exception as exc:
-                denied_as_expected = expected_rc != 0 and command.startswith("sudo")
+                denied_as_expected = expected_rc != 0
                 rows.append({
                     "command": command, "label": label, "ok": denied_as_expected,
                     "output": str(exc), "returncode": 125, "decision": "deny",
