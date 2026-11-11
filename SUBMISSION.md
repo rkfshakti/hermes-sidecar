@@ -96,7 +96,7 @@ Open https://form.typeform.com/to/FwJLvOln and fill:
 | **Plugin Description** | `Remote brain, local hands. A paired execution backend that lets a remote Hermes run terminal and file tools on your local machine, with a local approval prompt, a deny list, a sanitized environment, and an audit log.` |
 | **Email Address** | `rkfshakti@gmail.com` (change if you prefer another) |
 | **Discord Username** | *fill in your Nous Research Discord username* |
-| **X Demo Post Link** | *paste the published post URL* |
+| **X Demo Post Link** | `https://x.com/onemohapatra/status/2120535026844774911` |
 | **GitHub PR Link** | `https://github.com/NousResearch/hermes-agent/pull/153541` |
 
 The thank-you screen says winners are posted from `@nousresearch` after the
