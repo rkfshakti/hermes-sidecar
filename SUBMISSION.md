@@ -11,13 +11,16 @@
 | Demo video | `video/sidecar-demo.mp4` (82.0 s, 1200×900, narrated) |
 | Silent cut | `video/sidecar-demo-silent.mp4` (same footage, no voiceover) |
 | Thumbnail | `video/slides/01-title.png` |
-| X post (to publish) | _add the URL here after posting_ |
+| X post (published) | https://x.com/onemohapatra/status/2120535026844774911 |
 | Form | https://form.typeform.com/to/FwJLvOln |
 | Deadline | **5:00 PM EST, 11 Nov 2026** = **3:30 AM IST, 12 Nov 2026** |
 
 ---
 
-## 1. Post the demo on X
+## 1. Post the demo on X — ✅ DONE
+
+**Published:** https://x.com/onemohapatra/status/2120535026844774911
+(11 Nov 2026, 15:12 UTC; tags `@NousResearch`; video and image description attached)
 
 1. Open X and create a new post.
 2. Attach `video/sidecar-demo.mp4` (82 s, narrated). Use
@@ -133,7 +136,7 @@ and X (for the demo).
 - [x] Pinned-source clone validates at the exact SHA
 - [x] Plugin repo tests workflow green at the pinned SHA
 - [x] Demo video is 82.0 s (< 90 s), shows the plugin working
-- [ ] X post published and tagged `@NousResearch`
+- [x] X post published and tagged `@NousResearch` — https://x.com/onemohapatra/status/2120535026844774911
 - [ ] Typeform submitted with both links
 - [ ] Maintainer approved the `action_required` workflow runs
 
