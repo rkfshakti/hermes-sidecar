@@ -13,12 +13,15 @@ with Glassbox when you need kernel enforcement.
 from __future__ import annotations
 
 import base64
+import binascii
 import getpass
 import json
 import logging
 import os
 import platform
+import re
 import select
+import shlex
 import signal
 import socket
 import subprocess
@@ -39,7 +42,7 @@ from . import pairing as token_mod
 
 logger = logging.getLogger("hermes.sidecar")
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 MAX_BODY_BYTES = 2 * 1024 * 1024
 APPROVAL_TIMEOUT_S = 120
 
@@ -63,6 +66,10 @@ def safe_env(*, cwd: Path) -> dict[str, str]:
     keep = ("PATH", "HOME", "USER", "LOGNAME", "SHELL", "LANG", "LC_ALL", "LC_CTYPE", "TERM", "TMPDIR", "TZ")
     env = {name: os.environ[name] for name in keep if os.environ.get(name)}
     env.setdefault("PATH", "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
+    env.setdefault("AI_AGENT", "hermes-agent")
+    env.setdefault("HERMES_AGENT", "true")
+    env.setdefault("GIT_PAGER", "cat")
+    env.setdefault("PAGER", "cat")
     env["PWD"] = str(cwd)
     env["SIDECAR"] = "1"
     return env
@@ -121,29 +128,105 @@ def _truncate_output(output: str, limit: int) -> tuple[str, bool]:
     return output[:head] + marker + output[-tail:], True
 
 
-_POLICY_MARKER = "# sidecar-policy-command:"
+_EXEC_MARKER = "# sidecar-exec-v2:"
+_LEGACY_POLICY_MARKER = "# sidecar-policy-command:"
+_CWD_MARKER_RE = re.compile(r"^__HERMES_CWD_[0-9a-f]{12}__$")
+_PIPE_MARKER_RE = re.compile(r"^__HERMES_PIPE_[0-9a-f]{12}__$")
+_MAX_WRAPPED_COMMAND_BYTES = 256 * 1024
 
 
-def _split_policy_command(command: str) -> tuple[str, str]:
-    """Return ``(policy_command, executable_command)``.
+@dataclass(frozen=True)
+class ExecRequest:
+    """One parsed ``/v1/exec`` request.
 
-    Hermes's ``BaseEnvironment`` wraps every tool command in a shell script for
-    cwd tracking, pipe status and env snapshots. The wrapper hides the model's
-    original command behind an ``eval '...'``, where a pattern like ``sudo`` is
-    preceded by a quote. The plugin therefore prepends the original command as a
-    base64 comment; the daemon classifies that command and executes the wrapper.
-    Raw clients that send no marker are classified as-is.
+    ``policy_command`` is the exact text the daemon classifies, prompts for,
+    audits and executes. For protocol-v2 requests the daemon also builds the
+    shell wrapper from that text; the client never supplies an executable
+    remainder that the policy did not see.
     """
-    first, separator, rest = command.partition("\n")
-    if first.startswith(_POLICY_MARKER):
-        encoded = first[len(_POLICY_MARKER):].strip()
-        try:
-            decoded = base64.b64decode(encoded.encode("ascii"), validate=True).decode("utf-8")
-        except Exception:
-            return command, command
-        if decoded.strip() and rest.strip():
-            return decoded, rest
-    return command, command
+
+    policy_command: str
+    cwd: str | None = None
+    cwd_marker: str = ""
+    pipe_marker: str = ""
+    wrapped: bool = False
+
+
+def _parse_exec_request(command: str) -> ExecRequest:
+    """Parse a v2 envelope, reject the legacy marker, or accept a raw command.
+
+    The old protocol let a client send a benign policy command and a different
+    executable script in the same request. That turned the approval prompt into a
+    claim about what would run, not the thing that actually ran. The v2 envelope
+    carries data only: the daemon builds the wrapper itself.
+    """
+    first, _, rest = command.partition("\n")
+    if first.startswith(_LEGACY_POLICY_MARKER):
+        raise ValueError(
+            "legacy sidecar-policy-command requests are no longer accepted; "
+            "upgrade the remote Sidecar plugin"
+        )
+    if not first.startswith(_EXEC_MARKER):
+        return ExecRequest(policy_command=command)
+    if rest.strip():
+        raise ValueError("trailing data after the sidecar-exec-v2 header")
+    encoded = first[len(_EXEC_MARKER):].strip()
+    try:
+        decoded = base64.b64decode(encoded.encode("ascii"), validate=True).decode("utf-8")
+        payload = json.loads(decoded)
+    except (ValueError, UnicodeDecodeError, binascii.Error):
+        raise ValueError("invalid sidecar-exec-v2 header") from None
+    if not isinstance(payload, dict):
+        raise ValueError("sidecar-exec-v2 header must be a JSON object")
+    policy_command = payload.get("command")
+    cwd = payload.get("cwd")
+    marker = payload.get("cwd_marker") or ""
+    pipe_marker = payload.get("pipe_marker") or ""
+    if not isinstance(policy_command, str) or not policy_command.strip():
+        raise ValueError("sidecar-exec-v2 command must be a non-empty string")
+    if cwd is not None and not isinstance(cwd, str):
+        raise ValueError("sidecar-exec-v2 cwd must be a string")
+    if marker and (not isinstance(marker, str) or not _CWD_MARKER_RE.fullmatch(marker)):
+        raise ValueError("sidecar-exec-v2 cwd_marker is invalid")
+    if pipe_marker and (not isinstance(pipe_marker, str) or not _PIPE_MARKER_RE.fullmatch(pipe_marker)):
+        raise ValueError("sidecar-exec-v2 pipe_marker is invalid")
+    return ExecRequest(
+        policy_command=policy_command,
+        cwd=cwd or None,
+        cwd_marker=marker,
+        pipe_marker=pipe_marker,
+        wrapped=True,
+    )
+
+
+def _build_wrapped_command(
+    command: str,
+    cwd: str,
+    cwd_marker: str = "",
+    pipe_marker: str = "",
+) -> str:
+    """Build the shell script the daemon runs, from the command it classified."""
+    escaped = command.replace("'", "'\\''")
+    capture_pipe = bool(pipe_marker) and "<<" not in command and not command.endswith("\\")
+    if capture_pipe:
+        eval_line = (
+            f"eval '{escaped}\n\n"
+            "__hermes_rc=$? __hermes_ps=(\"${PIPESTATUS[@]}\"); "
+            "(exit $__hermes_rc) && :'"
+        )
+    else:
+        eval_line = f"eval '{escaped}'"
+    lines = [
+        f"builtin cd -- {shlex.quote(cwd)} || exit 126",
+        eval_line,
+        "__hermes_ec=$?",
+    ]
+    if capture_pipe:
+        lines.append(f"printf '\\n{pipe_marker}%s{pipe_marker}\\n' \"${{__hermes_ps[*]-}}\"")
+    if cwd_marker:
+        lines.append(f"printf '\\n{cwd_marker}%s{cwd_marker}\\n' \"$(pwd -P)\"")
+    lines.append("exit $__hermes_ec")
+    return "\n".join(lines)
 
 
 class SidecarHandler(BaseHTTPRequestHandler):
@@ -272,12 +355,14 @@ class SidecarHandler(BaseHTTPRequestHandler):
             self._error(400, "command must be a non-empty string")
             return
         settings = self.state.settings
-        policy_command, executable = _split_policy_command(command)
-        if not policy_command.strip() or not executable.strip():
-            self._error(400, "command is empty after policy unwrapping")
+        try:
+            request = _parse_exec_request(command)
+        except ValueError as exc:
+            self._error(400, str(exc))
             return
-        if len(executable.encode("utf-8", "replace")) > 256 * 1024:
-            self._error(413, "wrapped command exceeds the local execution limit")
+        policy_command = request.policy_command
+        if not policy_command.strip():
+            self._error(400, "command is empty")
             return
         try:
             timeout = int(payload.get("timeout") or settings["timeout"])
@@ -292,15 +377,31 @@ class SidecarHandler(BaseHTTPRequestHandler):
             self._error(413, "stdin exceeds the request limit")
             return
 
-        raw_cwd = payload.get("cwd")
+        raw_cwd = request.cwd or payload.get("cwd")
         cwd = str(raw_cwd or self.state.workspace)
         try:
             cwd_path = Path(os.path.expandvars(os.path.expanduser(cwd)))
+            if not cwd_path.is_absolute():
+                cwd_path = self.state.workspace / cwd_path
             cwd_path = cwd_path.resolve()
         except OSError:
             cwd_path = self.state.workspace
         if not cwd_path.is_dir():
             self._error(400, f"cwd is not a directory on the local machine: {cwd_path}")
+            return
+
+        executable = (
+            _build_wrapped_command(
+                policy_command,
+                str(cwd_path),
+                request.cwd_marker,
+                request.pipe_marker,
+            )
+            if request.wrapped
+            else policy_command
+        )
+        if len(executable.encode("utf-8", "replace")) > _MAX_WRAPPED_COMMAND_BYTES:
+            self._error(413, "command exceeds the local execution limit")
             return
 
         decision = policy_mod.classify_command(

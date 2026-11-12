@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from sidecar import policy
 
 
@@ -36,6 +34,34 @@ def test_hard_denies():
         decision = policy.classify_command(command)
         assert decision.action == "deny", (command, decision)
         assert decision.reason
+
+
+def test_recursive_delete_of_root_or_home_is_denied():
+    for command in (
+        "rm -rf /",
+        "rm -rf ~",
+        "rm -rf ~/",
+        "rm -rf $HOME",
+        "rm -rf ${HOME}",
+        "rm -rf -- ~",
+        "rm -r -f /",
+        "rm --recursive --force /",
+        "sh -c 'rm -rf /'",
+        'bash -c "rm -rf ~"',
+    ):
+        decision = policy.classify_command(command)
+        assert decision.action == "deny", (command, decision)
+
+
+def test_rm_without_recursive_or_outside_root_is_not_a_hard_deny():
+    for command in ("rm -f /tmp/x", "rm -rf ./build", "rm -rf /tmp/build"):
+        assert policy.classify_command(command).action != "deny", command
+
+
+def test_long_rm_flag_does_not_backtrack_quadratically():
+    # The old nested-quantifier rule stalled on one long -rrrr… flag.
+    command = "rm -" + ("r" * 20_000)
+    assert policy.classify_command(command).action in ("ask", "deny")
 
 
 def test_git_push_needs_approval_but_is_not_a_hard_deny():

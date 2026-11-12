@@ -9,6 +9,7 @@ remote backend, like SSH or a container.
 from __future__ import annotations
 
 import base64
+import json
 import os
 import threading
 from pathlib import Path
@@ -153,18 +154,23 @@ class SidecarEnvironment(BaseEnvironment):  # type: ignore[misc,valid-type]
         return super().execute(command, cwd=self._normalize_cwd(cwd), **kwargs)
 
     def _wrap_command(self, command: str, cwd: str) -> str:
-        """Keep the model's original command visible to the daemon's policy.
+        """Send the daemon data, never a pre-built executable wrapper.
 
-        ``BaseEnvironment`` wraps the command in a shell script whose ``eval '…'``
-        hides the command from simple pattern rules. The daemon receives the
-        original as a base64 comment, classifies that, and executes the wrapper.
+        The daemon classifies exactly the command it will run and builds the
+        cwd marker itself. Carrying a separate executable remainder would let a
+        token holder show ``pwd`` to the policy and run something else.
         """
-        wrapped = super()._wrap_command(command, cwd)
-        try:
-            encoded = base64.b64encode(command.encode("utf-8")).decode("ascii")
-        except Exception:
-            return wrapped
-        return f"# sidecar-policy-command: {encoded}\n{wrapped}"
+        payload = {
+            "command": command,
+            "cwd": cwd,
+            "cwd_marker": self._cwd_marker,
+            # Hermes 0.22.3 predates BaseEnvironment._pipe_marker.
+            "pipe_marker": getattr(self, "_pipe_marker", ""),
+        }
+        encoded = base64.b64encode(
+            json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        ).decode("ascii")
+        return f"# sidecar-exec-v2: {encoded}"
 
     def _run_bash(
         self,

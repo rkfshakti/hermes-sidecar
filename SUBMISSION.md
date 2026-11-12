@@ -129,12 +129,12 @@ and X (for the demo).
 - [x] `requires_hermes` matches in `plugin.yaml` and the catalog entry (`>=0.22.3`)
 - [x] `hermes plugins validate . --install-deps` passes at the pinned SHA
 - [x] `hermes plugins doctor . --ci` passes
-- [x] 44/44 pytest tests pass at the pinned SHA (live daemon/BaseEnvironment
-      integration included)
+- [x] 50/50 pytest tests pass at the pinned SHA (live daemon/BaseEnvironment
+      integration and the security regression tests included)
 - [x] `hermes sidecar verify` 8/8
 - [x] `hermes sidecar demo` all checks pass
-- [x] Pinned-source clone validates at the exact SHA
-- [x] Plugin repo tests workflow green at the pinned SHA
+- [ ] Pinned-source clone validates at the exact SHA (pending push)
+- [ ] Plugin repo tests workflow green at the pinned SHA (pending push)
 - [x] Demo video is 82.0 s (< 90 s), shows the plugin working
 - [x] X post published and tagged `@NousResearch` — https://x.com/onemohapatra/status/2120535026844774911
 - [x] Typeform submitted with both links (11 Nov 2026)

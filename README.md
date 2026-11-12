@@ -69,10 +69,15 @@ profile. Then, on the remote:
 
 ```bash
 hermes config set plugins.entries.sidecar.settings.url http://127.0.0.1:8765
-hermes config set plugins.entries.sidecar.settings.token <the-token>
 hermes config set plugins.entries.sidecar.settings.workspace /Users/you/Projects/acme
+export SIDECAR_TOKEN=<the-token>
 hermes sidecar test
 ```
+
+The token is a secret, so keep it in the remote profile's environment or `.env`
+as `SIDECAR_TOKEN`; the pairing command prints that route by default. Avoid
+`hermes config set plugins.entries.sidecar.settings.token` unless you deliberately
+want the bearer credential stored in `config.yaml`.
 
 Use the **local machine's absolute path**. A `~` is resolved by the daemon, but
 the remote process's home is not the local home, so an absolute path is the least
@@ -238,25 +243,28 @@ Hermes tool call
 SidecarProvider (TerminalEnvironmentProvider)
       │  builds SidecarEnvironment for the workspace
       ▼
-BaseEnvironment wraps the command for cwd/pipe/env
-      │  Sidecar prepends the original command as a base64 comment
+BaseEnvironment hands Sidecar the raw command and cwd
+      │  Sidecar sends data only: command, cwd, cwd-marker
       ▼
 POST /v1/exec  (Bearer token, JSON)
       │
       ▼
 Local daemon
-      ├─ classify the original command (allow / ask / deny)
+      ├─ parse the data envelope, never a client-supplied wrapper
+      ├─ classify exactly the command it will run (allow / ask / deny)
       ├─ ask the person at the keyboard if needed
+      ├─ build the cd/eval/cwd-marker wrapper itself
       ├─ run bash -c with a sanitized environment
       ├─ enforce the timeout and kill the process group
       ├─ cap and return stdout+stderr
       └─ append metadata to the local audit log
 ```
 
-The base64 comment exists because Hermes's normal wrapper hides the model's
-command inside an `eval '…'`. Without it, a pattern rule would see `eval 'sudo …`
-and miss the word boundary. The daemon classifies the original command; it never
-classifies the wrapper as if it were the command.
+The daemon builds the wrapper because the policy, the approval prompt, the audit
+entry and the executed command must be the same string. The old protocol carried
+the policy command and a separate shell wrapper in one request; a client could
+show `pwd` to the policy and execute something else. Protocol v2 rejects that
+marker outright.
 
 The daemon is deliberately small: standard library only, no database, no
 background workers, no outbound network. The plugin has **zero Python

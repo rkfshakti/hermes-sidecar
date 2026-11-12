@@ -1,6 +1,6 @@
 [project]
 name = "hermes-sidecar"
-version = "1.0.0"
+version = "1.1.0"
 description = "Remote brain, local hands: paired local execution backend for Hermes Agent"
 requires-python = ">=3.11"
 license = { text = "MIT" }

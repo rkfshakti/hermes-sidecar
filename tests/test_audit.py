@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-
 from sidecar.audit import AuditLog, redact_command, render_text, summarize
 
 

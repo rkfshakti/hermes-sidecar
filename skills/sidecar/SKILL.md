@@ -1,7 +1,7 @@
 ---
 name: sidecar
 description: Explain and operate the Sidecar split runtime — a remote Hermes whose terminal and file tools execute on the user's local machine through a paired, approval-gated daemon. Use when the user asks where a command ran, why a command was denied, how to inspect the local audit log, or how to work with a local workspace from a remote agent.
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [remote, terminal, local, approval, audit]

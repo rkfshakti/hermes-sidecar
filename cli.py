@@ -139,8 +139,8 @@ def _pair_payload(url: str, token: str, workspace: str | None = None) -> dict[st
         "hermes plugins enable sidecar",
         "hermes config set terminal.backend sidecar",
         f"hermes config set plugins.entries.sidecar.settings.url {url}",
-        f"hermes config set plugins.entries.sidecar.settings.token {token}",
         f"hermes config set plugins.entries.sidecar.settings.workspace {local_workspace}",
+        f"export SIDECAR_TOKEN={shlex.quote(token)}",
         "hermes sidecar test",
     ]
     return {"url": url, "token": token, "workspace": local_workspace, "commands": commands}
@@ -163,7 +163,7 @@ def _cmd_pair(args: argparse.Namespace) -> int:
     print("───────────────")
     print(f"  Local daemon   {url}")
     print(f"  Token          {token_mod.mask_token(token)}  (full token below)")
-    print(f"  Workspace      {config_mod.expanded_workspace(_settings().get('workspace'))}")
+    print(f"  Workspace      {payload['workspace']}")
     print()
     print(_bold("On this local machine"))
     print("  hermes sidecar serve")
@@ -386,8 +386,7 @@ def _cmd_demo(args: argparse.Namespace) -> int:
 
 
 def _cmd_verify(args: argparse.Namespace) -> int:
-    from . import daemon
-    from .client import SidecarClient, SidecarError
+    from .client import SidecarClient
 
     checks: list[dict[str, Any]] = []
 

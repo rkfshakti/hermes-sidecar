@@ -44,6 +44,10 @@ def test_base_environment_round_trip(tmp_path):
         assert result["returncode"] == 0
         assert "hello from BaseEnvironment" in result["output"]
         assert env.execute("pwd")["output"].strip() == str(tmp_path)
+        pipeline = env.execute("printf 'x' | cat")
+        assert pipeline["returncode"] == 0
+        if getattr(env, "_pipe_marker", ""):
+            assert pipeline["pipeline_status"] == [0, 0]
         assert env.execute("sh -c 'exit 7'")["returncode"] == 7
         denied = env.execute("sudo -n true")
         assert denied["returncode"] != 0

@@ -48,8 +48,6 @@ _DENY_RULES: tuple[tuple[re.Pattern[str], str], ...] = tuple(
     for pattern, reason in (
         (r"(^|[\s;|&])sudo(\s|$)", "privilege escalation (sudo)"),
         (r"(^|[\s;|&])doas(\s|$)", "privilege escalation (doas)"),
-        (r"\brm\s+(-[a-z]*[rf][a-z]*\s+)+/(?:\s|$)", "recursive delete of /"),
-        (r"\brm\s+(-[a-z]*[rf][a-z]*\s+)+~(?:/)?(?:\s|$)", "recursive delete of home"),
         (r"\bmkfs(\.|\s|$)", "filesystem format"),
         (r"\bdd\s+if=", "raw disk copy"),
         (r"\bdiskutil\s+(erase|partition|secureErase|zeroDisk|randomDisk)\b", "disk erase"),
@@ -168,6 +166,69 @@ def _custom_rule(command: str, patterns: Iterable[str]) -> str:
     return ""
 
 
+_SHELL_OPERATORS = frozenset({";", ";;", "&", "&&", "|", "||", "(", ")"})
+_ROOT_DELETE_TARGETS = frozenset({"/", "/*", "~", "~/", "$HOME", "${HOME}", "/root"})
+
+
+def _shell_tokens(command: str) -> list[str]:
+    """Tokenize without regex backtracking on attacker-controlled command text."""
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|()")
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    return list(lexer)
+
+
+def _rm_flags_recursive(flags: Iterable[str]) -> bool:
+    for flag in flags:
+        if flag == "--recursive":
+            return True
+        if flag.startswith("--"):
+            continue
+        if "r" in flag[1:] or "R" in flag[1:]:
+            return True
+    return False
+
+
+def _recursive_delete_reason(command: str, *, depth: int = 0) -> str:
+    """Linear check for ``rm -r`` against ``/`` or a home directory.
+
+    A token pass avoids the nested-quantifier regex that backtracks quadratically
+    on one long ``-rrrr…`` flag. Quoted shell payloads (``sh -c 'rm -rf /'``) are
+    tokenized once more, bounded by *depth*.
+    """
+    try:
+        tokens = _shell_tokens(command)
+    except ValueError:
+        return ""
+    for index, token in enumerate(tokens):
+        if depth < 2 and "rm" in token and os.path.basename(token) != "rm":
+            nested = _recursive_delete_reason(token, depth=depth + 1)
+            if nested:
+                return nested
+        if os.path.basename(token) != "rm":
+            continue
+        flags: list[str] = []
+        cursor = index + 1
+        while cursor < len(tokens) and tokens[cursor] not in _SHELL_OPERATORS:
+            current = tokens[cursor]
+            if current == "--":
+                cursor += 1
+                break
+            if not current.startswith("-") or current == "-":
+                break
+            flags.append(current)
+            cursor += 1
+        if not _rm_flags_recursive(flags):
+            continue
+        while cursor < len(tokens) and tokens[cursor] not in _SHELL_OPERATORS:
+            target = tokens[cursor]
+            cursor += 1
+            normalized = target.rstrip("/")
+            if target in _ROOT_DELETE_TARGETS or normalized in {"/", "~", "$HOME", "${HOME}", "/root"}:
+                return "recursive delete of /" if target.startswith("/") else "recursive delete of home"
+    return ""
+
+
 def is_safe_simple(command: str) -> bool:
     """True for a side-effect-free command with no shell syntax.
 
@@ -213,6 +274,10 @@ def classify_command(
     for rule, reason in _DENY_RULES:
         if rule.search(text):
             return Decision("deny", reason, rule.pattern)
+
+    rm_reason = _recursive_delete_reason(text)
+    if rm_reason:
+        return Decision("deny", rm_reason)
 
     custom_deny = _custom_rule(text, settings["deny"])
     if custom_deny:
