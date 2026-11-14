@@ -1,5 +1,11 @@
 # Sidecar
 
+[![tests](https://img.shields.io/github/actions/workflow/status/rkfshakti/hermes-sidecar/tests.yml?branch=main&label=tests)](https://github.com/rkfshakti/hermes-sidecar/actions/workflows/tests.yml)
+[![license](https://img.shields.io/github/license/rkfshakti/hermes-sidecar)](LICENSE)
+[![plugin v1.1.0](https://img.shields.io/badge/plugin-v1.1.0-blue)](plugin.yaml)
+[![Hermes ≥ 0.22.3](https://img.shields.io/badge/Hermes-%E2%89%A5%200.22.3-8A2BE2)](https://github.com/NousResearch/hermes-agent)
+[![stars](https://img.shields.io/github/stars/rkfshakti/hermes-sidecar?style=social)](https://github.com/rkfshakti/hermes-sidecar/stargazers)
+
 **Remote brain, local hands.**
 
 Sidecar is a Hermes Agent terminal backend for the split-runtime case: the agent
@@ -306,5 +312,10 @@ hermes plugins doctor . --ci
 Built for the [Hermes Agent Plugin Hackathon](https://x.com/NousResearch/status/2118094256438936062).
 The plugin is the entry; the demo and the catalog PR are linked from the
 submission form.
+
+---
+
+If Sidecar saved your workspace from one bad command, a ⭐ helps other Hermes
+users find it: [github.com/rkfshakti/hermes-sidecar](https://github.com/rkfshakti/hermes-sidecar).
 
 MIT.
